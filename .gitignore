@@ -1,0 +1,67 @@
+.cursorrules
+.cursor
+migrate_vad.py
+test_complete_analysis.py
+test_complete_vad_system.py
+test_vad_on_video.py
+test_ocr_analysis.py
+*.mp4
+*.wav
+*.m4a
+*.mp3
+uploader/DEPLOYMENT.md
+db.sqlite3
+list_uploads.py
+fix_latest_video.py
+fix_migration_data.py
+fix_vad_null_values.py
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.envgcp-credentials.json
+.env*
+
+# Documentation with sensitive info
+COMPLETE_DOCUMENTATION.md

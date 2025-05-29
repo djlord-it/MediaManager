@@ -1,0 +1,436 @@
+{% extends 'uploader/base.html' %}
+
+{% block title %}Liste des Vidéos - MediaManager{% endblock %}
+
+{% block content %}
+<!-- Search Section -->
+<div class="search-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="text-center mb-4">
+                    <i class="bi bi-search me-2"></i>Rechercher dans vos vidéos
+                </h1>
+                <form method="get" class="d-flex">
+                    <input type="text" 
+                           name="q" 
+                           value="{{ query }}" 
+                           class="form-control form-control-lg search-bar me-2" 
+                           placeholder="Rechercher par titre ou contenu OCR..."
+                           aria-label="Recherche">
+                    <button class="btn btn-light btn-lg px-4" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </form>
+                
+                {% if query %}
+                    <div class="text-center mt-3">
+                        <span class="badge bg-light text-dark fs-6">
+                            {{ total_videos }} résultat{{ total_videos|pluralize }} pour "{{ query }}"
+                        </span>
+                        <a href="{% url 'uploader:video_list' %}" class="btn btn-sm btn-outline-light ms-2">
+                            <i class="bi bi-x-circle me-1"></i>Effacer
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Grid -->
+<div class="container">
+    {% if page_obj %}
+        <!-- Stats Bar -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h2 class="h4 mb-0">
+                    <i class="bi bi-collection-play me-2 text-primary"></i>
+                    {% if query %}Résultats de recherche{% else %}Mes Vidéos{% endif %}
+                </h2>
+                <p class="text-muted">{{ total_videos }} vidéo{{ total_videos|pluralize }} au total</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{% url 'uploader:video_upload' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Nouvelle Vidéo
+                </a>
+            </div>
+        </div>
+
+        <!-- Video Cards Grid -->
+        <div class="row g-4">
+            {% for video in page_obj %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="card video-card h-100">
+                        <!-- Video Preview -->
+                        <div class="video-preview position-relative">
+                            <a href="{% url 'uploader:video_detail' video.pk %}" class="video-link">
+                                <video poster="" class="w-100" preload="metadata">
+                                    <source src="{{ video.file.url }}" type="video/mp4">
+                                    Votre navigateur ne supporte pas la lecture vidéo.
+                                </video>
+                                <div class="video-overlay d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-play-circle-fill play-button"></i>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <!-- Card Body -->
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">
+                                <a href="{% url 'uploader:video_detail' video.pk %}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ video.title }}
+                                </a>
+                            </h5>
+                            
+                            <!-- OCR Text Preview -->
+                            {% if video.corrected_text or video.extracted_text %}
+                                <div class="ocr-text mb-3 flex-grow-1">
+                                    {% if video.corrected_text %}
+                                        <small class="text-muted d-block mb-1">
+                                            <i class="bi bi-robot me-1 text-success"></i>Texte corrigé (IA):
+                                        </small>
+                                        <span class="small text-success-emphasis">
+                                            {{ video.corrected_text|truncatechars:120 }}
+                                            {% if video.corrected_text|length > 120 %}
+                                                <a href="{% url 'uploader:video_detail' video.pk %}" 
+                                                   class="text-decoration-none">
+                                                    <small>Lire plus...</small>
+                                                </a>
+                                            {% endif %}
+                                        </span>
+                                        {% if video.category %}
+                                            <div class="mt-1">
+                                                <span class="badge bg-primary bg-opacity-10 text-primary small">
+                                                    <i class="bi bi-tag me-1"></i>{{ video.category }}
+                                                </span>
+                                                {% if video.keywords %}
+                                                    {% for keyword in video.keywords|slice:":3" %}
+                                                        <span class="badge bg-light text-dark small ms-1">{{ keyword }}</span>
+                                                    {% endfor %}
+                                                    {% if video.keywords|length > 3 %}
+                                                        <span class="small text-muted">+{{ video.keywords|length|add:"-3" }}</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <small class="text-muted d-block mb-1">
+                                            <i class="bi bi-eye me-1"></i>Texte détecté (OCR):
+                                        </small>
+                                        <span class="small">
+                                            {{ video.extracted_text|truncatechars:120 }}
+                                            {% if video.extracted_text|length > 120 %}
+                                                <a href="{% url 'uploader:video_detail' video.pk %}" 
+                                                   class="text-decoration-none">
+                                                    <small>Lire plus...</small>
+                                                </a>
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="ocr-text mb-3 flex-grow-1">
+                                    <small class="text-muted">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Aucun texte détecté dans cette vidéo
+                                    </small>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Card Footer -->
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {{ video.uploaded_at|date:"d M Y à H:i" }}
+                                </small>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'uploader:video_detail' video.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>Voir
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger delete-btn" 
+                                            data-video-id="{{ video.pk }}"
+                                            data-video-title="{{ video.title }}"
+                                            title="Supprimer cette vidéo">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Navigation des pages" class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                               href="?page=1{% if query %}&q={{ query }}{% endif %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" 
+                               href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" 
+                               href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" 
+                               href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- No Results -->
+        <div class="row justify-content-center">
+            <div class="col-lg-6 text-center">
+                <div class="py-5">
+                    {% if query %}
+                        <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+                        <h3 class="mt-4 mb-3">Aucun résultat trouvé</h3>
+                        <p class="text-muted mb-4">
+                            Aucune vidéo ne correspond à votre recherche "{{ query }}".<br>
+                            Essayez avec d'autres mots-clés ou vérifiez l'orthographe.
+                        </p>
+                        <a href="{% url 'uploader:video_list' %}" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-arrow-left me-1"></i>Voir toutes les vidéos
+                        </a>
+                    {% else %}
+                        <i class="bi bi-camera-video text-muted" style="font-size: 4rem;"></i>
+                        <h3 class="mt-4 mb-3">Aucune vidéo uploadée</h3>
+                        <p class="text-muted mb-4">
+                            Commencez par uploader votre première vidéo !<br>
+                            L'OCR extraira automatiquement le texte visible.
+                        </p>
+                    {% endif %}
+                    
+                    <a href="{% url 'uploader:video_upload' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i>Uploader une vidéo
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Supprimer la vidéo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-trash text-danger" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="text-center mb-3">Êtes-vous sûr de vouloir supprimer cette vidéo ?</h6>
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>
+                        <div>
+                            <strong>Cette action est irréversible !</strong><br>
+                            <small>La vidéo et son fichier seront définitivement supprimés de Google Cloud Storage.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="video-preview p-3 bg-light rounded">
+                    <strong id="videoTitle"></strong><br>
+                    <small class="text-muted" id="videoId"></small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Annuler
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-2"></i>Supprimer définitivement
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentVideoId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Attacher les événements aux boutons de suppression
+    document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            currentVideoId = this.dataset.videoId;
+            const videoTitle = this.dataset.videoTitle;
+            
+            // Mettre à jour le modal
+            document.getElementById('videoTitle').textContent = videoTitle;
+            document.getElementById('videoId').textContent = `ID: #${currentVideoId}`;
+            
+            // Afficher le modal
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        });
+    });
+    
+    // Gérer la confirmation de suppression
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (!currentVideoId) return;
+        
+        const button = this;
+        const originalText = button.innerHTML;
+        
+        // Désactiver le bouton pendant la suppression
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Suppression...';
+        
+        // Requête AJAX pour supprimer la vidéo
+        fetch(`/video/${currentVideoId}/delete/ajax/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Afficher un message de succès
+                showToast('success', data.message);
+                
+                // Fermer le modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+                modal.hide();
+                
+                // Supprimer la carte de la page
+                const videoCard = document.querySelector(`button[data-video-id="${currentVideoId}"]`)?.closest('.col-lg-4');
+                if (videoCard) {
+                    videoCard.style.transition = 'opacity 0.3s ease';
+                    videoCard.style.opacity = '0';
+                    setTimeout(() => {
+                        videoCard.remove();
+                        // Recharger la page si plus aucune vidéo
+                        if (document.querySelectorAll('.video-card').length === 0) {
+                            window.location.reload();
+                        }
+                    }, 300);
+                }
+                
+                currentVideoId = null;
+            } else {
+                // Afficher l'erreur
+                showToast('error', data.message);
+                
+                // Réactiver le bouton
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showToast('error', 'Une erreur est survenue lors de la suppression');
+            
+            // Réactiver le bouton
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    });
+});
+
+function showToast(type, message) {
+    const bgColor = type === 'success' ? '#198754' : '#dc3545';
+    const icon = type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill';
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = `<i class="bi bi-${icon} me-2"></i>${message}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        z-index: 1100;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-width: 350px;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Supprimer après 4 secondes
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+</script>
+
+<style>
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,532 @@
+{% extends 'uploader/base.html' %}
+
+{% block title %}{{ video.title }} - MediaManager{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Navigation Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'uploader:video_list' %}" class="text-decoration-none">
+                    <i class="bi bi-collection-play me-1"></i>Mes Vidéos
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ video.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Video Player Column -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-0">
+                    <!-- Video Player -->
+                    <div class="ratio ratio-16x9">
+                        <video controls class="rounded-top" poster="">
+                            <source src="{{ video.file.url }}" type="video/mp4">
+                            <p class="p-4 text-muted">
+                                Votre navigateur ne supporte pas la lecture vidéo.
+                                <a href="{{ video.file.url }}" class="btn btn-primary ms-2">
+                                    Télécharger la vidéo
+                                </a>
+                            </p>
+                        </video>
+                    </div>
+                    
+                    <!-- Video Title and Meta -->
+                    <div class="p-4">
+                        <h1 class="h3 mb-3">{{ video.title }}</h1>
+                        
+                        <div class="row text-muted small">
+                            <div class="col-sm-6">
+                                <i class="bi bi-calendar3 me-2"></i>
+                                Uploadé le {{ video.uploaded_at|date:"d F Y à H:i" }}
+                            </div>
+                            <div class="col-sm-6 text-sm-end">
+                                <i class="bi bi-file-earmark-play me-2"></i>
+                                Fichier vidéo
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OCR Results -->
+            <div class="card shadow-sm border-0 mb-4">
+                {% if video.corrected_text and video.corrected_text != 'N/A' %}
+                    <div class="card-header bg-gradient d-flex align-items-center" style="background: linear-gradient(135deg, #198754, #20c997);">
+                        <i class="bi bi-robot text-white me-2"></i>
+                        <h5 class="mb-0 text-white">Texte OCR Corrigé par IA</h5>
+                        <span class="badge bg-white text-success ms-auto">
+                            <i class="bi bi-check-circle-fill me-1"></i>Analysé
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="ocr-results">
+                            <!-- Texte OCR corrigé -->
+                            <div class="p-3 bg-success bg-opacity-10 rounded mb-4">
+                                <p class="lead mb-0 text-success-emphasis">{{ video.corrected_text }}</p>
+                            </div>
+                            
+                            <!-- Comparaison OCR original vs corrigé -->
+                            {% if video.extracted_text and video.extracted_text != video.corrected_text %}
+                                <div class="accordion" id="ocrComparison">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOCR" aria-expanded="false">
+                                                <i class="bi bi-eye me-2"></i>Voir le texte OCR original
+                                                <span class="badge bg-warning text-dark ms-2">Avant correction</span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapseOCR" class="accordion-collapse collapse" data-bs-parent="#ocrComparison">
+                                            <div class="accordion-body">
+                                                <p class="text-muted mb-2">Texte extrait directement par OCR :</p>
+                                                <div class="p-3 bg-warning bg-opacity-10 rounded text-warning-emphasis">
+                                                    {{ video.extracted_text }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% elif video.extracted_text %}
+                    <div class="card-header bg-gradient d-flex align-items-center" style="background: linear-gradient(135deg, #6f42c1, #8b5cf6);">
+                        <i class="bi bi-eye-fill text-white me-2"></i>
+                        <h5 class="mb-0 text-white">Texte Extrait (OCR Brut)</h5>
+                        <span class="badge bg-white text-primary ms-auto">
+                            OCR Brut
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="ocr-results">
+                            <p class="lead mb-3">{{ video.extracted_text }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card-header bg-gradient d-flex align-items-center" style="background: linear-gradient(135deg, #6c757d, #adb5bd);">
+                        <i class="bi bi-exclamation-triangle text-white me-2"></i>
+                        <h5 class="mb-0 text-white">Aucun Texte OCR Détecté</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center py-3">
+                            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2 mb-1">Aucun texte OCR détecté</h6>
+                            <small class="text-muted">N/A</small>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Audio Transcription Results -->
+            <div class="card shadow-sm border-0">
+                {% if video.corrected_audio_transcription and video.corrected_audio_transcription != 'N/A' %}
+                    <div class="card-header bg-gradient d-flex align-items-center" style="background: linear-gradient(135deg, #0d6efd, #6610f2);">
+                        <i class="bi bi-mic-fill text-white me-2"></i>
+                        <h5 class="mb-0 text-white">Transcription Audio Corrigée par IA</h5>
+                        <span class="badge bg-white text-primary ms-auto">
+                            <i class="bi bi-soundwave me-1"></i>Audio IA
+                        </span>
+                        {% if video.has_speech %}
+                            <span class="badge bg-success text-white ms-2">
+                                <i class="bi bi-mic me-1"></i>Parole détectée
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark ms-2">
+                                <i class="bi bi-mic-mute me-1"></i>Aucune parole
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="audio-results">
+                            <!-- Transcription audio corrigée -->
+                            <div class="p-3 bg-primary bg-opacity-10 rounded mb-4">
+                                <p class="lead mb-0 text-primary-emphasis">{{ video.corrected_audio_transcription }}</p>
+                            </div>
+                            
+                            <!-- Comparaison audio original vs corrigé -->
+                            {% if video.audio_transcription and video.audio_transcription != video.corrected_audio_transcription %}
+                                <div class="accordion" id="audioComparison">
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAudio" aria-expanded="false">
+                                                <i class="bi bi-volume-up me-2"></i>Voir la transcription audio originale
+                                                <span class="badge bg-info text-dark ms-2">Avant correction</span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapseAudio" class="accordion-collapse collapse" data-bs-parent="#audioComparison">
+                                            <div class="accordion-body">
+                                                <p class="text-muted mb-2">Transcription audio brute :</p>
+                                                <div class="p-3 bg-info bg-opacity-10 rounded text-info-emphasis">
+                                                    {{ video.audio_transcription }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% elif video.audio_transcription %}
+                    <div class="card-header bg-gradient d-flex align-items-center" style="background: linear-gradient(135deg, #17a2b8, #6f42c1);">
+                        <i class="bi bi-mic text-white me-2"></i>
+                        <h5 class="mb-0 text-white">Transcription Audio (Brute)</h5>
+                        <span class="badge bg-white text-info ms-auto">
+                            Audio Brut
+                        </span>
+                        {% if video.has_speech %}
+                            <span class="badge bg-success text-white ms-2">
+                                <i class="bi bi-mic me-1"></i>Parole détectée
+                            </span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark ms-2">
+                                <i class="bi bi-mic-mute me-1"></i>Aucune parole
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="audio-results">
+                            <p class="lead mb-3">{{ video.audio_transcription }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card-header bg-gradient d-flex align-items-center" style="background: linear-gradient(135deg, #6c757d, #adb5bd);">
+                        <i class="bi bi-mic-mute text-white me-2"></i>
+                        <h5 class="mb-0 text-white">Aucune Transcription Audio</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center py-3">
+                            <i class="bi bi-mic-mute text-warning" style="font-size: 2rem;"></i>
+                            <h6 class="mt-2 mb-1">Aucune transcription audio</h6>
+                            <small class="text-muted">N/A</small>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <!-- Catégorisation et mots-clés (section commune) -->
+                {% if video.category or video.keywords %}
+                    <div class="card-footer bg-light">
+                        <div class="row">
+                            {% if video.category %}
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="bi bi-tag me-1"></i>Catégorie
+                                    </h6>
+                                    <span class="badge bg-primary fs-6 px-3 py-2">
+                                        {{ video.category }}
+                                        {% if video.subcategory %}
+                                            <span class="text-primary-emphasis"> > {{ video.subcategory }}</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            {% if video.keywords %}
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="bi bi-tags me-1"></i>Mots-clés IA
+                                    </h6>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for keyword in video.keywords %}
+                                            <span class="badge bg-light text-dark border">{{ keyword }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Actions Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ video.file.url }}" 
+                           class="btn btn-outline-primary" 
+                           download="{{ video.title }}.mp4">
+                            <i class="bi bi-download me-2"></i>Télécharger
+                        </a>
+                        
+                        <button type="button" 
+                                class="btn btn-outline-secondary" 
+                                onclick="copyToClipboard('{{ video.file.url }}')">
+                            <i class="bi bi-link-45deg me-2"></i>Copier le lien
+                        </button>
+                        
+                        {% if video.corrected_text %}
+                            <button type="button" 
+                                    class="btn btn-outline-success" 
+                                    onclick="copyToClipboard('{{ video.corrected_text|escapejs }}')">
+                                <i class="bi bi-clipboard-check me-2"></i>Copier le texte corrigé
+                            </button>
+                        {% elif video.extracted_text %}
+                            <button type="button" 
+                                    class="btn btn-outline-info" 
+                                    onclick="copyToClipboard('{{ video.extracted_text|escapejs }}')">
+                                <i class="bi bi-clipboard me-2"></i>Copier le texte OCR
+                            </button>
+                        {% endif %}
+                        
+                        <a href="/admin/uploader/video/{{ video.pk }}/change/" 
+                           class="btn btn-outline-warning">
+                            <i class="bi bi-pencil me-2"></i>Modifier (Admin)
+                        </a>
+                        
+                        <!-- Bouton de suppression avec modal -->
+                        <button type="button" 
+                                class="btn btn-outline-danger" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteModal">
+                            <i class="bi bi-trash me-2"></i>Supprimer la vidéo
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search Similar -->
+            {% if video.extracted_text %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-search me-2"></i>Recherche similaire
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">
+                            Trouvez d'autres vidéos contenant des mots-clés similaires
+                        </p>
+                        {% if keywords %}
+                            <div class="d-flex flex-wrap gap-1">
+                                {% for word in keywords %}
+                                    <a href="{% url 'uploader:video_list' %}?q={{ word }}" 
+                                       class="badge bg-light text-dark text-decoration-none">
+                                        {{ word }}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Technical Info -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Informations techniques
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">ID:</span>
+                            <span class="font-monospace">#{{ video.pk }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Format:</span>
+                            <span>MP4</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Stockage:</span>
+                            <span>Google Cloud</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">OCR:</span>
+                            <span class="text-success">✓ Traité</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Supprimer la vidéo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-trash text-danger" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="text-center mb-3">Êtes-vous sûr de vouloir supprimer cette vidéo ?</h6>
+                <div class="alert alert-warning">
+                    <div class="d-flex">
+                        <i class="bi bi-exclamation-triangle-fill me-2 text-warning"></i>
+                        <div>
+                            <strong>Cette action est irréversible !</strong><br>
+                            <small>La vidéo et son fichier seront définitivement supprimés de Google Cloud Storage.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="video-preview p-3 bg-light rounded">
+                    <strong>{{ video.title }}</strong><br>
+                    <small class="text-muted">Uploadée le {{ video.uploaded_at|date:"d/m/Y à H:i" }}</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Annuler
+                </button>
+                <button type="button" class="btn btn-danger" onclick="deleteVideo()">
+                    <i class="bi bi-trash me-2"></i>Supprimer définitivement
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function deleteVideo() {
+    // Désactiver le bouton pendant la suppression
+    const deleteBtn = document.querySelector('.modal-footer .btn-danger');
+    const originalText = deleteBtn.innerHTML;
+    deleteBtn.disabled = true;
+    deleteBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Suppression...';
+    
+    // Requête AJAX pour supprimer la vidéo
+    fetch("{% url 'uploader:video_delete_ajax' video.pk %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Afficher un message de succès
+            showToast('success', data.message);
+            
+            // Fermer le modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+            modal.hide();
+            
+            // Rediriger vers la liste après 2 secondes
+            setTimeout(() => {
+                window.location.href = "{% url 'uploader:video_list' %}";
+            }, 2000);
+        } else {
+            // Afficher l'erreur
+            showToast('error', data.message);
+            
+            // Réactiver le bouton
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showToast('error', 'Une erreur est survenue lors de la suppression');
+        
+        // Réactiver le bouton
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = originalText;
+    });
+}
+
+function showToast(type, message) {
+    const bgColor = type === 'success' ? '#198754' : '#dc3545';
+    const icon = type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill';
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = `<i class="bi bi-${icon} me-2"></i>${message}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 12px 16px;
+        border-radius: 8px;
+        z-index: 1100;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-width: 350px;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Supprimer après 5 secondes
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Créer une notification toast
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Copié dans le presse-papiers !';
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #198754;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            z-index: 1000;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Supprimer après 3 secondes
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }).catch(function() {
+        alert('Erreur lors de la copie');
+    });
+}
+
+// Custom template filter simulation for split
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-play prevention for better UX
+    const video = document.querySelector('video');
+    if (video) {
+        video.preload = 'metadata';
+    }
+});
+</script>
+
+<style>
+.toast-notification {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+</style>
+{% endblock %} 

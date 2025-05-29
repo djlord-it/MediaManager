@@ -1,0 +1,59 @@
+{% extends 'uploader/base.html' %}
+
+{% block title %}Supprimer la vidéo - {{ video.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmer la suppression
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">
+                            <i class="fas fa-warning me-2"></i>
+                            Attention !
+                        </h5>
+                        <p class="mb-0">
+                            Cette action est <strong>irréversible</strong>. La vidéo et son fichier seront définitivement supprimés de Google Cloud Storage.
+                        </p>
+                    </div>
+
+                    <div class="video-info p-3 bg-light rounded mb-4">
+                        <h5>Vidéo à supprimer :</h5>
+                        <p><strong>Titre :</strong> {{ video.title }}</p>
+                        <p><strong>Catégorie :</strong> {{ video.category|default:"Non catégorisée" }} 
+                        {% if video.subcategory %} > {{ video.subcategory }}{% endif %}</p>
+                        <p><strong>Uploadée le :</strong> {{ video.uploaded_at|date:"d/m/Y à H:i" }}</p>
+                        {% if video.keywords %}
+                        <p><strong>Mots-clés :</strong> 
+                            {% for keyword in video.keywords %}
+                                <span class="badge bg-secondary me-1">{{ keyword }}</span>
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" class="d-flex gap-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-lg">
+                            <i class="fas fa-trash me-2"></i>
+                            Oui, supprimer définitivement
+                        </button>
+                        
+                        <a href="{% url 'uploader:video_detail' video.pk %}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>
+                            Annuler
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
