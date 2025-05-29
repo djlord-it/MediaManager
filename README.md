@@ -9,7 +9,7 @@
 ## **Interface Utilisateur**
 
 ### Page Principale
-![Interface Principale](docs/Main_page.png)
+![Interface Principale](docs/Main_Page.png)
 
 ### Recherche Avancée
 ![Interface de Recherche](docs/Recherche.png)
